@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { createPdf } from "@/lib/pdf/create-pdf"
 import { parsePdfRequest } from "@/lib/pdf/parse-pdf-request"
 import { isPdfFailure } from "@/lib/pdf/types"
 
@@ -21,6 +20,7 @@ export const Route = createFileRoute("/api/pdf")({
         if (isPdfFailure(parsed)) {
           return Response.json(parsed, { status: 400 })
         }
+        const { createPdf } = await import("@/lib/pdf/create-pdf")
         const outcome = await createPdf(parsed)
         if (!outcome.ok) {
           const status =
