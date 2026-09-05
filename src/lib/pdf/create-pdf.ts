@@ -1,12 +1,12 @@
 import { createElement } from "react"
-import { renderDocument } from "@formepdf/core"
-import { PdfRenderer, type RenderOptions } from "takumi-pdf"
 
+import { renderForme } from "./forme-runtime"
 import {
   isKarmartReceipt,
   karmartReceiptMarkup,
   karmartRenderOptions,
 } from "./karmart-receipt"
+import { renderTakumi } from "./takumi-runtime"
 import { templateDocument } from "./templates"
 import type { PdfFailure, PdfOutcome, PdfRequest } from "./types"
 
@@ -28,18 +28,6 @@ function pdfFilename(request: PdfRequest): string {
   return request.filename ?? "document.pdf"
 }
 
-async function renderTakumi(
-  node: Parameters<PdfRenderer["render"]>[0],
-  options?: RenderOptions,
-): Promise<Uint8Array> {
-  const renderer = new PdfRenderer()
-  try {
-    return await renderer.render(node, options)
-  } finally {
-    renderer.free()
-  }
-}
-
 export async function createPdf(request: PdfRequest): Promise<PdfOutcome> {
   try {
     if (
@@ -56,7 +44,7 @@ export async function createPdf(request: PdfRequest): Promise<PdfOutcome> {
       if (!Document) {
         return fail(unknownTemplate(request.design.name))
       }
-      const bytes = await renderDocument(
+      const bytes = await renderForme(
         createElement(Document, { data: request.data }),
       )
       return ok(bytes, pdfFilename(request))

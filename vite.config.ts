@@ -13,31 +13,38 @@ function copyPdfWasm(): Plugin {
     apply: "build",
     closeBundle() {
       const destinations = [
+        join(process.cwd(), ".output/server"),
         join(process.cwd(), ".output/server/_libs"),
+        join(process.cwd(), ".vercel/output/functions/__server.func"),
         join(
           process.cwd(),
           ".vercel/output/functions/__server.func/_libs",
         ),
+      ]
+      const files = [
+        {
+          from: join(
+            process.cwd(),
+            "node_modules/@formepdf/core/pkg-web/forme_bg.wasm",
+          ),
+          name: "forme_bg.wasm",
+        },
+        {
+          from: join(
+            process.cwd(),
+            "node_modules/takumi-pdf/pkg/takumi_pdf_wasm_bg.wasm",
+          ),
+          name: "takumi_pdf_wasm_bg.wasm",
+        },
       ]
       for (const destDir of destinations) {
         if (!existsSync(join(destDir, ".."))) {
           continue
         }
         mkdirSync(destDir, { recursive: true })
-        copyFileSync(
-          join(
-            process.cwd(),
-            "node_modules/@formepdf/core/pkg-node/forme_bg.wasm",
-          ),
-          join(destDir, "forme_bg.wasm"),
-        )
-        copyFileSync(
-          join(
-            process.cwd(),
-            "node_modules/takumi-pdf/pkg/takumi_pdf_wasm_bg.wasm",
-          ),
-          join(destDir, "takumi_pdf_wasm_bg.wasm"),
-        )
+        for (const file of files) {
+          copyFileSync(file.from, join(destDir, file.name))
+        }
       }
     },
   }
@@ -52,7 +59,10 @@ const config = defineConfig({
     devtools(),
     tailwindcss(),
     tanstackStart(),
-    nitro(),
+    nitro({
+      wasm: false,
+      traceDeps: ["takumi-pdf*", "@formepdf/core*"],
+    }),
     viteReact(),
     copyPdfWasm(),
   ],
