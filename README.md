@@ -1,4 +1,4 @@
-# pdf-maker
+# Imprint
 
 React + Bun + TanStack Start app that renders pdfcn documents with Takumi or Forme, previews them live, and stores designs in local SQLite.
 

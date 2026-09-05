@@ -40,7 +40,7 @@ const sampleData: InvoiceClassicData = {
     { description: "UI/UX Design", quantity: 1, unitPrice: 8750 },
     { description: "Consulting", quantity: 10, unitPrice: 1500 },
   ],
-  logo: "/favicon.png",
+  logo: "/icon.png",
   notes: "Thank you for your business!",
   paymentTerms: {
     dueDate: "March 17, 2026",
@@ -78,7 +78,7 @@ const InvoiceClassicContent = ({ data }: { data: InvoiceClassicData }) => {
             variant="logo-left"
             logo={
               <PdfImage
-                src={data.logo ?? "/favicon.png"}
+                src={data.logo ?? "/icon.png"}
                 style={{ margin: 0 }}
               />
             }
