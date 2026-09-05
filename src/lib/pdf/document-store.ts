@@ -163,9 +163,10 @@ let appStore: DocumentStore | undefined
 
 export function getAppDocumentStore(): DocumentStore {
   if (!appStore) {
-    appStore = createDocumentStore(
-      `${process.cwd()}/data/pdf-maker.sqlite`,
-    )
+    const dbPath = process.env.VERCEL
+      ? "/tmp/pdf-maker.sqlite"
+      : `${process.cwd()}/data/pdf-maker.sqlite`
+    appStore = createDocumentStore(dbPath)
   }
   return appStore
 }
