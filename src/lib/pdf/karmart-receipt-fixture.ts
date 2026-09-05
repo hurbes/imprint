@@ -1,0 +1,48 @@
+export const karmartReceiptFixture = {
+  page: "Page 1 of 1",
+  title: "ใบเสร็จรับเงิน/ใบกำกับภาษี",
+  companyName: "บริษัท คาร์มาร์ท จำกัด (มหาชน)",
+  companyAddress:
+    "81-81/1 ซอยเพชรเกษม 54 แยก 3  แขวงบางด้วน  เขตภาษีเจริญ กรุงเทพมหานคร 10160",
+  companyTaxId: "0107537000823",
+  companyBranch: "สำนักงานใหญ่",
+  signatureBy: "Digitally signed by บริษัท คาร์มาร์ท จำกัด (มหาชน)",
+  signatureDate: "Date: 2026.09.01 09:28:08 ICT",
+  orderNo: "",
+  buyerName: "Jiratchaya อยุธยา Name Miss Jiratchaya",
+  buyerAddress: [
+    "Jiratchaya อยุธยา Name Miss Jiratchaya Jiratchaya Chatklun Na Ayutthaya 456 ถ.สนามบิน",
+    "ตำบลในเมือง อำเภอเมืองพิษณุโลก จังหวัดพิษณุโลก 65000",
+  ],
+  buyerTaxId: "1659900293315",
+  buyerBranch: "",
+  documentNo: "C16IP69080880",
+  documentDate: "31/08/2026",
+  refDocNo: "",
+  refDate: "",
+  items: [
+    {
+      productCode: "1020305210022",
+      description: "ไวท์ทามินวิตามินซีอาร์บูตินบอดี้โลชั่น 450ml",
+      quantity: 2,
+      unitPrice: 129,
+      amount: 258,
+    },
+    {
+      productCode: "5040303120031",
+      description: "กล่องไปรษณีย์ C แบบพิมพ์ลาย 2026",
+      quantity: 1,
+      unitPrice: 0,
+      amount: 0,
+    },
+  ],
+  amount: 258,
+  discount: 0,
+  netAmount: 241.12,
+  vat: 16.88,
+  total: 258,
+  amountInWords: "สองร้อยห้าสิบแปดบาทถ้วน",
+  note: "",
+  footer:
+    "เอกสารนี้ได้จัดทำและส่งข้อมูลให้แก่กรมสรรพากรด้วยวิธีการทางอิเล็กทรอนิกส์",
+} as const
