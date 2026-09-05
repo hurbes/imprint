@@ -40,6 +40,7 @@ describe("createPdf", () => {
     expect(outcome.ok).toBe(true)
     if (outcome.ok) {
       expect(startsWithPdf(outcome.value.bytes)).toBe(true)
+      expect(outcome.value.bytes.byteLength).toBeGreaterThan(5_000)
     }
   })
 

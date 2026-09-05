@@ -1,4 +1,5 @@
-import { init, renderDocument } from "@formepdf/core/worker"
+import { init, renderSerializedDoc } from "@formepdf/core/worker"
+import { serialize } from "@formepdf/react"
 import type { ReactElement } from "react"
 
 import { readWasmBytes } from "./wasm-bytes"
@@ -17,5 +18,5 @@ async function ensureForme(): Promise<void> {
 
 export async function renderForme(element: ReactElement): Promise<Uint8Array> {
   await ensureForme()
-  return renderDocument(element)
+  return renderSerializedDoc(serialize(element) as Record<string, unknown>)
 }
