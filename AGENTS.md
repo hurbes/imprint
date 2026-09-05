@@ -9,7 +9,7 @@ Agents and the UI share one contract. Generate a PDF by posting design and data.
 ```json
 {
   "engine": "takumi",
-  "design": { "kind": "template", "name": "invoice-minimal" },
+  "design": { "kind": "template", "name": "invoice-classic" },
   "data": {
     "invoiceNumber": "INV-2026-003",
     "invoiceDate": "February 20, 2026",
@@ -40,7 +40,7 @@ Success is `application/pdf`. Failures are JSON `{ "kind", "message" }`.
 
 `engine` is `takumi` or `forme`. Forme only accepts `{ "kind": "template", "name": "<template>" }`. Takumi also accepts `{ "kind": "html", "markup": "<div>Hello</div>" }`.
 
-Templates: `invoice-classic`, `invoice-consultant`, `invoice-corporate`, `invoice-creative`, `invoice-minimal`, `invoice-modern`, `report-financial`, `report-marketing`, `report-operations`, `report-security`, `receipt-karmart`.
+Templates: `invoice-classic`, `receipt-karmart`.
 
 ```bash
 curl -X POST http://localhost:3000/api/pdf \
@@ -55,3 +55,4 @@ curl -X POST http://localhost:3000/api/pdf \
 - `POST /api/documents` with `{ title, engine, design, data }`
 - `GET /api/documents/:id`
 - `PATCH /api/documents/:id` with any of `{ title, engine, design, data }`
+- `DELETE /api/documents/:id`

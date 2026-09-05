@@ -19,10 +19,10 @@ describe("createPdf", () => {
     }
   })
 
-  test("takumi invoice-minimal yields a PDF", async () => {
+  test("takumi invoice-classic yields a PDF", async () => {
     const outcome = await createPdf({
       engine: "takumi",
-      design: { kind: "template", name: "invoice-minimal" },
+      design: { kind: "template", name: "invoice-classic" },
       data: invoiceMinimalFixture,
     })
     expect(outcome.ok).toBe(true)
@@ -31,10 +31,10 @@ describe("createPdf", () => {
     }
   })
 
-  test("forme invoice-minimal yields a PDF", async () => {
+  test("forme invoice-classic yields a PDF", async () => {
     const outcome = await createPdf({
       engine: "forme",
-      design: { kind: "template", name: "invoice-minimal" },
+      design: { kind: "template", name: "invoice-classic" },
       data: invoiceMinimalFixture,
     })
     expect(outcome.ok).toBe(true)

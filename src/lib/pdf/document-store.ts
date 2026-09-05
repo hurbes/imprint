@@ -28,6 +28,7 @@ export type DocumentStore = {
     id: string,
     patch: Partial<Pick<PdfDocument, "title" | "engine" | "design" | "data">>,
   ) => PdfDocument | null
+  remove: (id: string) => boolean
 }
 
 export function createDocumentStore(dbPath: string): DocumentStore {
@@ -63,6 +64,7 @@ export function createDocumentStore(dbPath: string): DocumentStore {
         updated_at = $updated_at
     WHERE id = $id
   `)
+  const deleteRow = db.query(`DELETE FROM documents WHERE id = $id`)
 
   return {
     create(input) {
@@ -134,6 +136,10 @@ export function createDocumentStore(dbPath: string): DocumentStore {
         $updated_at: next.updatedAt,
       })
       return next
+    },
+    remove(id) {
+      const result = deleteRow.run({ $id: id })
+      return result.changes > 0
     },
   }
 }

@@ -3,15 +3,6 @@ export type Engine = (typeof ENGINES)[number]
 
 export const TEMPLATE_NAMES = [
   "invoice-classic",
-  "invoice-consultant",
-  "invoice-corporate",
-  "invoice-creative",
-  "invoice-minimal",
-  "invoice-modern",
-  "report-financial",
-  "report-marketing",
-  "report-operations",
-  "report-security",
   "receipt-karmart",
 ] as const
 export type TemplateName = (typeof TEMPLATE_NAMES)[number]

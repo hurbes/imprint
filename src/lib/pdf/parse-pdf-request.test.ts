@@ -19,7 +19,7 @@ describe("parsePdfRequest", () => {
 
   test("missing engine is invalid-request", () => {
     const result = parsePdfRequest({
-      design: { kind: "template", name: "invoice-minimal" },
+      design: { kind: "template", name: "invoice-classic" },
       data: invoiceMinimalFixture,
     })
     expect(isPdfFailure(result)).toBe(true)
@@ -40,10 +40,10 @@ describe("parsePdfRequest", () => {
     }
   })
 
-  test("parses takumi invoice-minimal with fixture data", () => {
+  test("parses takumi invoice-classic with fixture data", () => {
     const result = parsePdfRequest({
       engine: "takumi",
-      design: { kind: "template", name: "invoice-minimal" },
+      design: { kind: "template", name: "invoice-classic" },
       data: invoiceMinimalFixture,
     })
     expect(isPdfFailure(result)).toBe(false)
@@ -51,7 +51,7 @@ describe("parsePdfRequest", () => {
       expect(result.engine).toBe("takumi")
       expect(result.design).toEqual({
         kind: "template",
-        name: "invoice-minimal",
+        name: "invoice-classic",
       })
       expect(result.data.invoiceNumber).toBe("INV-2026-003")
     }
@@ -73,10 +73,10 @@ describe("parsePdfRequest", () => {
     }
   })
 
-  test("parses forme invoice-minimal with fixture data", () => {
+  test("parses forme invoice-classic with fixture data", () => {
     const result = parsePdfRequest({
       engine: "forme",
-      design: { kind: "template", name: "invoice-minimal" },
+      design: { kind: "template", name: "invoice-classic" },
       data: invoiceMinimalFixture,
     })
     expect(isPdfFailure(result)).toBe(false)
@@ -84,7 +84,7 @@ describe("parsePdfRequest", () => {
       expect(result.engine).toBe("forme")
       expect(result.design).toEqual({
         kind: "template",
-        name: "invoice-minimal",
+        name: "invoice-classic",
       })
     }
   })

@@ -69,6 +69,16 @@ export const Route = createFileRoute("/api/documents/$id")({
         })
         return Response.json(updated)
       },
+      DELETE: ({ params }) => {
+        const removed = getAppDocumentStore().remove(params.id)
+        if (!removed) {
+          return Response.json(
+            { kind: "invalid-request", message: "Document not found" },
+            { status: 404 },
+          )
+        }
+        return new Response(null, { status: 204 })
+      },
     },
   },
 })

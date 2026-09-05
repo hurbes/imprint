@@ -8,7 +8,7 @@ import { invoiceMinimalFixture } from "./invoice-minimal-fixture"
 
 const design = {
   kind: "template" as const,
-  name: "invoice-minimal" as const,
+  name: "invoice-classic" as const,
 }
 
 function tempStore() {
@@ -63,5 +63,23 @@ describe("DocumentStore", () => {
   test("get missing id returns null", () => {
     const store = tempStore()
     expect(store.get("missing-id")).toBeNull()
+  })
+
+  test("remove deletes the record", () => {
+    const store = tempStore()
+    const created = store.create({
+      title: "Hello",
+      engine: "takumi",
+      design,
+      data: { ...invoiceMinimalFixture },
+    })
+    expect(store.remove(created.id)).toBe(true)
+    expect(store.get(created.id)).toBeNull()
+    expect(store.list().map((row) => row.id)).not.toContain(created.id)
+  })
+
+  test("remove missing id returns false", () => {
+    const store = tempStore()
+    expect(store.remove("missing-id")).toBe(false)
   })
 })
