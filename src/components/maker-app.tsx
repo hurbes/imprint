@@ -1,11 +1,18 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { FileTextIcon } from "lucide-react"
+import {
+  FileTextIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
+  Trash2Icon,
+} from "lucide-react"
+import type { PanelImperativeHandle } from "react-resizable-panels"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -24,6 +31,11 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Select,
@@ -37,10 +49,7 @@ import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group"
+import { APP_NAME } from "@/lib/brand"
 import { templateCatalog, templateOptions } from "@/lib/pdf/catalog"
 import { parsePdfRequest } from "@/lib/pdf/parse-pdf-request"
 import {
@@ -53,19 +62,64 @@ import {
 } from "@/lib/pdf/types"
 
 const previewDelayMs = 400
+const documentsCollapsedSize = 56
+const documentsExpandedSize = 200
+
+const renderModes = [
+  {
+    value: "takumi-template",
+    label: "Takumi, template",
+    engine: "takumi",
+    designKind: "template",
+  },
+  {
+    value: "takumi-html",
+    label: "Takumi, HTML",
+    engine: "takumi",
+    designKind: "html",
+  },
+  {
+    value: "forme-template",
+    label: "Forme, template",
+    engine: "forme",
+    designKind: "template",
+  },
+] as const
+
+type RenderMode = (typeof renderModes)[number]["value"]
+
+function renderModeFor(
+  engine: Engine,
+  designKind: "template" | "html",
+): RenderMode {
+  if (engine === "forme") {
+    return "forme-template"
+  }
+  if (designKind === "html") {
+    return "takumi-html"
+  }
+  return "takumi-template"
+}
 
 export function MakerApp() {
   const queryClient = useQueryClient()
   const [documentId, setDocumentId] = useState<string | null>(null)
   const [title, setTitle] = useState("Untitled")
   const [engine, setEngine] = useState<Engine>("takumi")
-  const [templateName, setTemplateName] = useState<TemplateName>("invoice-minimal")
+  const [templateName, setTemplateName] = useState<TemplateName>("invoice-classic")
   const [designKind, setDesignKind] = useState<"template" | "html">("template")
   const [markup, setMarkup] = useState("<div>Hello</div>")
   const [dataText, setDataText] = useState(
-    JSON.stringify(templateCatalog["invoice-minimal"].sampleData, null, 2),
+    JSON.stringify(templateCatalog["invoice-classic"].sampleData, null, 2),
   )
   const [debouncedPayload, setDebouncedPayload] = useState<unknown>(null)
+  const [documentsCollapsed, setDocumentsCollapsed] = useState(true)
+  const documentsPanelRef = useRef<PanelImperativeHandle>(null)
+
+  useEffect(() => {
+    const label = title.trim() || "Untitled"
+    document.title = `${label} — ${APP_NAME}`
+  }, [title])
 
   const requestJson = useMemo(() => {
     const data = parseJsonObject(dataText)
@@ -131,10 +185,48 @@ export function MakerApp() {
     },
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: deleteDocument,
+    onSuccess: (_result, id) => {
+      if (id === documentId) {
+        resetEditor()
+      }
+      toast.success("Deleted")
+      void queryClient.invalidateQueries({ queryKey: ["documents"] })
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Delete failed")
+    },
+  })
+
   const previewUrl = previewQuery.data?.url
   const previewPending = previewQuery.isFetching || !debouncedPayload
   const savePending = saveMutation.isPending
   const downloadPending = downloadMutation.isPending
+
+  function toggleDocuments() {
+    const panel = documentsPanelRef.current
+    if (!panel) {
+      return
+    }
+    if (panel.isCollapsed()) {
+      panel.resize(documentsExpandedSize)
+    } else {
+      panel.collapse()
+    }
+  }
+
+  function resetEditor() {
+    setDocumentId(null)
+    setTitle("Untitled")
+    setEngine("takumi")
+    setTemplateName("invoice-classic")
+    setDesignKind("template")
+    setMarkup("<div>Hello</div>")
+    setDataText(
+      JSON.stringify(templateCatalog["invoice-classic"].sampleData, null, 2),
+    )
+  }
 
   function applyDocument(document: PdfDocument) {
     setDocumentId(document.id)
@@ -151,126 +243,203 @@ export function MakerApp() {
   }
 
   return (
-    <div className="flex min-h-svh gap-4 p-4">
-      <Card className="flex w-64 shrink-0 flex-col">
-        <CardHeader>
-          <CardTitle>Documents</CardTitle>
-          <CardDescription>Saved locally in SQLite.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setDocumentId(null)
-              setTitle("Untitled")
-              setEngine("takumi")
-              setTemplateName("invoice-minimal")
-              setDesignKind("template")
-              setDataText(
-                JSON.stringify(
-                  templateCatalog["invoice-minimal"].sampleData,
-                  null,
-                  2,
-                ),
-              )
-            }}
-          >
-            New
-          </Button>
-          <Separator />
-          <ScrollArea className="min-h-0 flex-1">
-            {documentsQuery.data && documentsQuery.data.length > 0 ? (
-              <div className="flex flex-col gap-1">
-                {documentsQuery.data.map((document) => (
-                  <Button
-                    key={document.id}
-                    variant={document.id === documentId ? "secondary" : "ghost"}
-                    className="justify-start"
-                    onClick={() => {
-                      void loadDocument(document.id)
-                        .then(applyDocument)
-                        .catch((error) => {
-                          toast.error(
-                            error instanceof Error
-                              ? error.message
-                              : "Failed to load document",
-                          )
-                        })
-                    }}
-                  >
-                    <span className="truncate">{document.title}</span>
-                  </Button>
-                ))}
-              </div>
+    <div className="h-svh p-4">
+      <ResizablePanelGroup orientation="horizontal" className="h-full">
+        <ResizablePanel
+          className="min-h-0"
+          collapsedSize={documentsCollapsedSize}
+          collapsible
+          defaultSize={documentsCollapsedSize}
+          maxSize={260}
+          minSize={168}
+          panelRef={documentsPanelRef}
+          onResize={(size) => {
+            setDocumentsCollapsed(size.inPixels <= documentsCollapsedSize + 1)
+          }}
+        >
+          <Card className="flex h-full min-h-0 flex-col" size="sm">
+            {documentsCollapsed ? (
+              <CardContent className="flex flex-1 flex-col items-center">
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label="Show documents"
+                  onClick={toggleDocuments}
+                >
+                  <PanelLeftOpenIcon />
+                </Button>
+              </CardContent>
             ) : (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <FileTextIcon />
-                  </EmptyMedia>
-                  <EmptyTitle>No documents</EmptyTitle>
-                  <EmptyDescription>
-                    Save a design to see it here.
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+              <>
+                <CardHeader>
+                  <CardTitle>Documents</CardTitle>
+                  <CardDescription>Saved on this device.</CardDescription>
+                  <CardAction>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label="Hide documents"
+                      onClick={toggleDocuments}
+                    >
+                      <PanelLeftCloseIcon />
+                    </Button>
+                  </CardAction>
+                </CardHeader>
+                <CardContent className="flex min-h-0 flex-1 flex-col gap-3">
+                  <Button variant="outline" onClick={resetEditor}>
+                    New
+                  </Button>
+                  <Separator />
+                  <ScrollArea className="min-h-0 flex-1">
+                    {documentsQuery.data && documentsQuery.data.length > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        {documentsQuery.data.map((document) => (
+                          <div key={document.id} className="flex items-center gap-1">
+                            <Button
+                              variant={
+                                document.id === documentId ? "secondary" : "ghost"
+                              }
+                              className="min-w-0 flex-1 justify-start"
+                              onClick={() => {
+                                void loadDocument(document.id)
+                                  .then(applyDocument)
+                                  .catch((error) => {
+                                    toast.error(
+                                      error instanceof Error
+                                        ? error.message
+                                        : "Failed to load document",
+                                    )
+                                  })
+                              }}
+                            >
+                              <span className="truncate">{document.title}</span>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-xs"
+                              aria-label={`Delete ${document.title}`}
+                              disabled={
+                                deleteMutation.isPending &&
+                                deleteMutation.variables === document.id
+                              }
+                              onClick={() => deleteMutation.mutate(document.id)}
+                            >
+                              <Trash2Icon />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Empty>
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon">
+                            <FileTextIcon />
+                          </EmptyMedia>
+                          <EmptyTitle>No documents</EmptyTitle>
+                          <EmptyDescription>
+                            Save a design to see it here.
+                          </EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </>
             )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
-
-      <Card className="flex w-[28rem] shrink-0 flex-col">
+          </Card>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel defaultSize="32%" minSize="22%" maxSize="50%" className="min-h-0">
+          <Card className="flex h-full min-h-0 flex-col">
         <CardHeader>
           <CardTitle>Design and data</CardTitle>
           <CardDescription>
             Same payload an agent posts to /api/pdf.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto">
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="title">Title</FieldLabel>
+              <FieldLabel>Engine</FieldLabel>
+              <Select
+                value={renderModeFor(engine, designKind)}
+                onValueChange={(value) => {
+                  if (typeof value !== "string") {
+                    return
+                  }
+                  const mode = renderModes.find((option) => option.value === value)
+                  if (!mode) {
+                    return
+                  }
+                  setEngine(mode.engine)
+                  setDesignKind(mode.designKind)
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    {
+                      renderModes.find(
+                        (mode) =>
+                          mode.value === renderModeFor(engine, designKind),
+                      )?.label
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {renderModes.map((mode) => (
+                      <SelectItem key={mode.value} value={mode.value}>
+                        {mode.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <div className="flex items-center justify-between gap-2">
+                <FieldLabel htmlFor="title">Title</FieldLabel>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    size="sm"
+                    disabled={savePending}
+                    onClick={() => {
+                      const current = parsePdfRequest(requestJson)
+                      if (isPdfFailure(current)) {
+                        toast.error(current.message)
+                        return
+                      }
+                      saveMutation.mutate({
+                        id: documentId,
+                        title,
+                        request: current,
+                      })
+                    }}
+                  >
+                    {savePending ? <Spinner data-icon="inline-start" /> : null}
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={
+                      downloadPending || isPdfFailure(parsePdfRequest(requestJson))
+                    }
+                    onClick={() => downloadMutation.mutate()}
+                  >
+                    {downloadPending ? (
+                      <Spinner data-icon="inline-start" />
+                    ) : null}
+                    Download
+                  </Button>
+                </div>
+              </div>
               <Input
                 id="title"
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
               />
             </Field>
-            <Field>
-              <FieldLabel>Engine</FieldLabel>
-              <ToggleGroup
-                value={[engine]}
-                onValueChange={(next) => {
-                  const value = next[0]
-                  if (value === "takumi" || value === "forme") {
-                    setEngine(value)
-                    if (value === "forme") {
-                      setDesignKind("template")
-                    }
-                  }
-                }}
-              >
-                <ToggleGroupItem value="takumi">Takumi</ToggleGroupItem>
-                <ToggleGroupItem value="forme">Forme</ToggleGroupItem>
-              </ToggleGroup>
-            </Field>
-            {engine === "takumi" ? (
-              <Field>
-                <FieldLabel>Source</FieldLabel>
-                <ToggleGroup
-                  value={[designKind]}
-                  onValueChange={(next) => {
-                    const value = next[0]
-                    if (value === "template" || value === "html") {
-                      setDesignKind(value)
-                    }
-                  }}
-                >
-                  <ToggleGroupItem value="template">Template</ToggleGroupItem>
-                  <ToggleGroupItem value="html">HTML</ToggleGroupItem>
-                </ToggleGroup>
-              </Field>
-            ) : null}
             {designKind === "template" || engine === "forme" ? (
               <Field>
                 <FieldLabel>Template</FieldLabel>
@@ -322,38 +491,12 @@ export function MakerApp() {
               />
             </Field>
           </FieldGroup>
-          <div className="flex gap-2">
-            <Button
-              disabled={savePending}
-              onClick={() => {
-                const current = parsePdfRequest(requestJson)
-                if (isPdfFailure(current)) {
-                  toast.error(current.message)
-                  return
-                }
-                saveMutation.mutate({
-                  id: documentId,
-                  title,
-                  request: current,
-                })
-              }}
-            >
-              {savePending ? <Spinner data-icon="inline-start" /> : null}
-              Save
-            </Button>
-            <Button
-              variant="outline"
-              disabled={downloadPending || isPdfFailure(parsePdfRequest(requestJson))}
-              onClick={() => downloadMutation.mutate()}
-            >
-              {downloadPending ? <Spinner data-icon="inline-start" /> : null}
-              Download
-            </Button>
-          </div>
         </CardContent>
-      </Card>
-
-      <Card className="flex min-w-0 flex-1 flex-col">
+          </Card>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel defaultSize="50%" minSize="28%" className="min-h-0">
+          <Card className="flex h-full min-h-0 flex-col">
         <CardHeader>
           <CardTitle>Preview</CardTitle>
           <CardDescription>Regenerated from the current design.</CardDescription>
@@ -377,7 +520,9 @@ export function MakerApp() {
             <Skeleton className="min-h-96 flex-1" />
           )}
         </CardContent>
-      </Card>
+          </Card>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }
@@ -487,4 +632,12 @@ async function saveDocument(input: {
     throw new Error(error.message ?? "Save failed")
   }
   return (await response.json()) as PdfDocument
+}
+
+async function deleteDocument(id: string): Promise<void> {
+  const response = await fetch(`/api/documents/${id}`, { method: "DELETE" })
+  if (!response.ok) {
+    const error = (await response.json()) as { message?: string }
+    throw new Error(error.message ?? "Delete failed")
+  }
 }
