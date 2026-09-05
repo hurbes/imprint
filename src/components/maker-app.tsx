@@ -497,10 +497,6 @@ export function MakerApp() {
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize="50%" minSize="28%" className="min-h-0">
           <Card className="flex h-full min-h-0 flex-col">
-        <CardHeader>
-          <CardTitle>Preview</CardTitle>
-          <CardDescription>Regenerated from the current design.</CardDescription>
-        </CardHeader>
         <CardContent className="flex min-h-0 flex-1 flex-col">
           {previewQuery.isError ? (
             <p className="text-sm text-destructive">
