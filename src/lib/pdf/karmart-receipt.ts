@@ -1,9 +1,7 @@
-import { readFile } from "node:fs/promises"
-import { join } from "node:path"
-
 import type { FontLoader, RenderOptions } from "takumi-pdf"
 
 import drawings from "../../assets/karmart/drawings.json"
+import { readKarmartFile } from "./karmart-files"
 import {
   KARMART_PX,
   PAGE_HEIGHT_PT,
@@ -118,7 +116,7 @@ export async function karmartReceiptMarkup(
   data: Record<string, unknown> = {},
 ): Promise<string> {
   const receipt = normalizeKarmartData(data)
-  const logo = (await readFile(asset("logo.jpeg"))).toString("base64")
+  const logo = readKarmartFile("logo.jpeg").toString("base64")
   const paths = (drawings as Drawing[]).map(drawingSvg).join("")
   const labels = karmartLabels.map((label) => slotBox(label.slot, label.text))
   const values = [
@@ -176,8 +174,8 @@ ${rows.join("")}
 }
 
 export async function karmartRenderOptions(): Promise<RenderOptions> {
-  const regular = await readFile(asset("AngsanaUPC-Regular-cmap.ttf"))
-  const bold = await readFile(asset("AngsanaUPC-Bold-cmap.ttf"))
+  const regular = readKarmartFile("AngsanaUPC-Regular-cmap.ttf")
+  const bold = readKarmartFile("AngsanaUPC-Bold-cmap.ttf")
   const fonts: FontLoader[] = [
     { name: "AngsanaUPC", data: regular, weight: 400 },
     { name: "AngsanaUPCBold", data: bold, weight: 400 },
@@ -193,8 +191,4 @@ export async function karmartRenderOptions(): Promise<RenderOptions> {
     fontFamilies: ["AngsanaUPC", "AngsanaUPCBold"],
     backgroundColor: "#ffffff",
   }
-}
-
-function asset(name: string): string {
-  return join(process.cwd(), "src/assets/karmart", name)
 }

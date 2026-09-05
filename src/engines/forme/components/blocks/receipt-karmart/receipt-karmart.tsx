@@ -1,8 +1,6 @@
-import { readFileSync } from "node:fs"
-import { join } from "node:path"
-
 import { Document, Image, Page, Text, View } from "@formepdf/react"
 
+import { readKarmartFile } from "@/lib/pdf/karmart-files"
 import {
   PAGE_HEIGHT_PT,
   PAGE_WIDTH_PT,
@@ -19,9 +17,9 @@ import {
   type KarmartSlot,
 } from "@/lib/pdf/karmart-receipt-slots"
 
-const logoSrc = `data:image/jpeg;base64,${readFileSync(
-  join(process.cwd(), "src/assets/karmart/logo.jpeg"),
-).toString("base64")}`
+function karmartLogoSrc(): string {
+  return `data:image/jpeg;base64,${readKarmartFile("logo.jpeg").toString("base64")}`
+}
 
 function Slot({
   slot,
@@ -140,7 +138,7 @@ export const ReceiptKarmartDocument = ({
             height: 14.85,
           }}
         >
-          <Image src={logoSrc} style={{ width: 105, height: 14.85 }} />
+          <Image src={karmartLogoSrc()} style={{ width: 105, height: 14.85 }} />
         </View>
         <Frame left={28.6} top={130.6} width={538.15} height={134.5} />
         <Frame left={28.6} top={280.6} width={538.15} height={465.25} />
